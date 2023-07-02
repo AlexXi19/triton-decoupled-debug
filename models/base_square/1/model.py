@@ -106,10 +106,10 @@ class TritonPythonModel:
             raise pb_utils.TritonModelException(
                 """the model `{}` requires the shape of 'OUT' to be
                 [1], got {}""".format(args['model_name'], out_shape))
-        if out_config['data_type'] != 'TYPE_INT32':
+        if out_config['data_type'] != 'TYPE_FP32':
             raise pb_utils.TritonModelException(
                 """the model `{}` requires the data_type of 'OUT' to be
-                'TYPE_INT32', got {}""".format(args['model_name'],
+                'TYPE_FP32', got {}""".format(args['model_name'],
                                                out_config['data_type']))
 
         self.inflight_thread_count = 0
@@ -186,7 +186,7 @@ class TritonPythonModel:
 
         for idx in range(in_input[0]):
             out_output = pb_utils.Tensor("OUT", np.array([in_input[0]],
-                                                         np.int32))
+                                                         np.float32))
             response = pb_utils.InferenceResponse(output_tensors=[out_output])
             response_sender.send(response)
 

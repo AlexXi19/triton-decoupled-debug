@@ -36,18 +36,8 @@ import os
 from tritonclient.utils import *
 import tritonclient.grpc as grpcclient
 
-class UserData:
 
-    def __init__(self):
-        self._completed_requests = queue.Queue()
-
-
-def callback(user_data, result, error):
-    if error:
-        user_data._completed_requests.put(error)
-    else:
-        user_data._completed_requests.put(result)
-
+# Signal/Time related functions
 start_time = None
 
 def signal_handler(signal, frame):
@@ -66,13 +56,26 @@ signal.signal(signal.SIGINT, signal_handler)
 
 start_time = time.time()
 
-model_name = "square_decoupled"
+# Model Start
+class UserData:
+
+    def __init__(self):
+        self._completed_requests = queue.Queue()
+
+
+def callback(user_data, result, error):
+    if error:
+        user_data._completed_requests.put(error)
+    else:
+        user_data._completed_requests.put(result)
+
+model_name = "square_float_v4"
+triton_url = os.getenv("PATH")
 inputs = [grpcclient.InferInput("IN", [1], np_to_triton_dtype(np.int32))]
 outputs = [grpcclient.InferRequestedOutput("OUT")]
 
 user_data = UserData()
 
-triton_url = os.getenv("PATH")
 
 with grpcclient.InferenceServerClient(url=os.getenv("TRITON_URL")) as triton_client:
 
@@ -126,7 +129,7 @@ with grpcclient.InferenceServerClient(url=os.getenv("TRITON_URL")) as triton_cli
 
             if in_values[i] != 0:
                 result_list = result_dict[this_id]
-                expected_data = np.array([in_values[i]], dtype=np.int32)
+                expected_data = np.array([in_values[i]], dtype=np.float32)
                 for j in range(len(result_list)):
                     this_data = result_list[j][1].as_numpy('OUT')
                     if not np.array_equal(expected_data, this_data):
@@ -137,5 +140,4 @@ with grpcclient.InferenceServerClient(url=os.getenv("TRITON_URL")) as triton_cli
         loop_count += 1
         if loop_count % 15 == 0:
             print("PASS: {} iterations".format(loop_count))
-
     sys.exit(0)
